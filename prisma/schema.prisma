@@ -36,3 +36,9 @@ model Documents {
   documentTypeId Int
   employeeId     Int
 }
+
+
+enum Status {
+  PENDING
+  SENT
+}
