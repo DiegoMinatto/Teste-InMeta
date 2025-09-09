@@ -9,14 +9,19 @@ import {
   Query,
 } from '@nestjs/common';
 import { TipodocumentoService } from './tipodocumento.service';
-import { ApiOkResponse } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiInternalServerErrorResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import {
   CreateTipodocumentoDto,
   ResponseTipoDocumentoDto,
   TipoDocumentoResponseDto,
   UpdateTipodocumentoDto,
 } from './dto';
-import { PaginationDto } from 'src/dto';
+import { ErrorResponseDto, PaginationDto } from 'src/dto';
 
 @Controller('tipodocumento')
 export class TipodocumentoController {
@@ -26,6 +31,9 @@ export class TipodocumentoController {
     description: 'Tipo de documento adicionado a base de dados',
     type: TipoDocumentoResponseDto,
   })
+  @ApiBadRequestResponse({ description: 'Bad Request', type: ErrorResponseDto })
+  @ApiNotFoundResponse({ type: ErrorResponseDto })
+  @ApiInternalServerErrorResponse({ type: ErrorResponseDto })
   @Post()
   create(@Body() createTipodocumentoDto: CreateTipodocumentoDto) {
     return this.tipodocumentoService.create(createTipodocumentoDto);
@@ -36,6 +44,9 @@ export class TipodocumentoController {
     type: ResponseTipoDocumentoDto,
     isArray: true,
   })
+  @ApiBadRequestResponse({ description: 'Bad Request', type: ErrorResponseDto })
+  @ApiNotFoundResponse({ type: ErrorResponseDto })
+  @ApiInternalServerErrorResponse({ type: ErrorResponseDto })
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
     return this.tipodocumentoService.findAll(paginationDto);
@@ -45,6 +56,9 @@ export class TipodocumentoController {
     description: 'Retorna um tipo de documento',
     type: TipoDocumentoResponseDto,
   })
+  @ApiBadRequestResponse({ description: 'Bad Request', type: ErrorResponseDto })
+  @ApiNotFoundResponse({ type: ErrorResponseDto })
+  @ApiInternalServerErrorResponse({ type: ErrorResponseDto })
   @Get(':id')
   findOne(@Param('id') id: number) {
     return this.tipodocumentoService.findOne(+id);
@@ -54,6 +68,9 @@ export class TipodocumentoController {
     description: 'Retorna o tipo de documento atualizado',
     type: TipoDocumentoResponseDto,
   })
+  @ApiBadRequestResponse({ description: 'Bad Request', type: ErrorResponseDto })
+  @ApiNotFoundResponse({ type: ErrorResponseDto })
+  @ApiInternalServerErrorResponse({ type: ErrorResponseDto })
   @Patch(':id')
   update(
     @Param('id') id: number,
@@ -66,6 +83,9 @@ export class TipodocumentoController {
     description: 'Retorna o tipo de documento removido',
     type: TipoDocumentoResponseDto,
   })
+  @ApiBadRequestResponse({ description: 'Bad Request', type: ErrorResponseDto })
+  @ApiNotFoundResponse({ type: ErrorResponseDto })
+  @ApiInternalServerErrorResponse({ type: ErrorResponseDto })
   @Delete(':id')
   remove(@Param('id') id: number) {
     return this.tipodocumentoService.remove(+id);

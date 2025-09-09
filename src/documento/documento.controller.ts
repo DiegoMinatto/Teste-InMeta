@@ -1,12 +1,18 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { DocumentoService } from './documento.service';
-import { ApiOkResponse } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiInternalServerErrorResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import {
   DocumentoResponseDto,
   EnviarDocumentoDto,
   QueryDocumentoDto,
   ResponseDocumentoDto,
 } from './dto';
+import { ErrorResponseDto } from 'src/dto';
 
 @Controller('documento')
 export class DocumentoController {
@@ -17,6 +23,9 @@ export class DocumentoController {
     type: ResponseDocumentoDto,
     isArray: true,
   })
+  @ApiBadRequestResponse({ description: 'Bad Request', type: ErrorResponseDto })
+  @ApiNotFoundResponse({ type: ErrorResponseDto })
+  @ApiInternalServerErrorResponse({ type: ErrorResponseDto })
   @Get()
   findAll(@Query() queryDocumentoDto: QueryDocumentoDto) {
     return this.documentoService.findAll(queryDocumentoDto);
@@ -26,6 +35,9 @@ export class DocumentoController {
     description: 'Entrega um documento',
     type: DocumentoResponseDto,
   })
+  @ApiBadRequestResponse({ description: 'Bad Request', type: ErrorResponseDto })
+  @ApiNotFoundResponse({ type: ErrorResponseDto })
+  @ApiInternalServerErrorResponse({ type: ErrorResponseDto })
   @Post('enviar')
   enviar(@Body() enviarDocumentoDto: EnviarDocumentoDto) {
     return this.documentoService.enviar(enviarDocumentoDto);

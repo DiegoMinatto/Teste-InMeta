@@ -1,10 +1,13 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { CreateFuncionarioDto } from './dto/create-funcionario.dto';
-import { UpdateFuncionarioDto } from './dto/update-funcionario.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { DateTime } from 'luxon';
-import { CreateDocumentosDto } from './dto/create-documentos.dto';
-import { UpdateDocumentosDto } from './dto/update-documentos.dto';
+import {
+  CreateDocumentosDto,
+  CreateFuncionarioDto,
+  UpdateDocumentosDto,
+  UpdateFuncionarioDto,
+} from './dto';
+import { PaginationDto } from 'src/dto';
 
 @Injectable()
 export class FuncionarioService {
@@ -54,8 +57,33 @@ export class FuncionarioService {
     });
   }
 
-  findAll() {
-    return this.prisma.employees.findMany({ include: { Documents: true } });
+  async findAll(paginationDto: PaginationDto) {
+    const rowPerPage = paginationDto.perPage ?? 10;
+
+    var paginate = {};
+
+    if (paginationDto.page) {
+      paginate = {
+        take: rowPerPage,
+        skip: (paginationDto.page - 1) * rowPerPage,
+      };
+    }
+
+    const count = await this.prisma.employees.count();
+
+    const employees = await this.prisma.employees.findMany({
+      ...paginate,
+    });
+
+    return {
+      content: employees,
+
+      meta: {
+        total: count,
+        currentPage: paginationDto.page,
+        perPage: rowPerPage,
+      },
+    };
   }
 
   findOne(id: number) {
@@ -286,7 +314,10 @@ export class FuncionarioService {
       });
     });
 
-    return `This action updates a #${id} funcionario`;
+    return this.prisma.employees.findUnique({
+      where: { id: id },
+      include: { Documents: true },
+    });
   }
 
   remove(id: number) {
