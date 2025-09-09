@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { CreateTipodocumentoDto } from './dto/create-tipodocumento.dto';
-import { UpdateTipodocumentoDto } from './dto/update-tipodocumento.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CreateTipodocumentoDto, UpdateTipodocumentoDto } from './dto';
+import { PaginationDto } from 'src/dto';
 
 @Injectable()
 export class TipodocumentoService {
@@ -11,19 +11,47 @@ export class TipodocumentoService {
     return this.prisma.documentTypes.create({ data: createTipodocumentoDto });
   }
 
-  findAll() {
-    return `This action returns all tipodocumento`;
+  async findAll(paginationDto: PaginationDto) {
+    const rowPerPage = paginationDto.perPage ?? 10;
+
+    var paginate = {};
+
+    if (paginationDto.page) {
+      paginate = {
+        take: rowPerPage,
+        skip: (paginationDto.page - 1) * rowPerPage,
+      };
+    }
+
+    const count = await this.prisma.documentTypes.count();
+
+    const documentTypes = await this.prisma.documentTypes.findMany({
+      ...paginate,
+    });
+
+    return {
+      content: documentTypes,
+
+      meta: {
+        total: count,
+        currentPage: paginationDto.page,
+        perPage: rowPerPage,
+      },
+    };
   }
 
   findOne(id: number) {
-    return `This action returns a #${id} tipodocumento`;
+    return this.prisma.documentTypes.findUnique({ where: { id: id } });
   }
 
   update(id: number, updateTipodocumentoDto: UpdateTipodocumentoDto) {
-    return `This action updates a #${id} tipodocumento`;
+    return this.prisma.documentTypes.update({
+      where: { id: id },
+      data: updateTipodocumentoDto,
+    });
   }
 
   remove(id: number) {
-    return `This action removes a #${id} tipodocumento`;
+    return this.prisma.documentTypes.delete({ where: { id: id } });
   }
 }

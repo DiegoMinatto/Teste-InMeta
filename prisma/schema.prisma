@@ -29,16 +29,17 @@ model DocumentTypes {
 
 model Documents {
   id             Int           @id @default(autoincrement())
-  name           String
-  status         String
+  name           String?
+  status         Status        @default(P)
   employee       Employees     @relation(fields: [employeeId], references: [id])
   documentType   DocumentTypes @relation(fields: [documentTypeId], references: [id])
   documentTypeId Int
   employeeId     Int
+
+  @@unique([documentTypeId, employeeId])
 }
 
-
 enum Status {
-  PENDING
-  SENT
+  P
+  E
 }

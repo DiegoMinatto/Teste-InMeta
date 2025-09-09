@@ -1,5 +1,13 @@
-import { Transform } from 'class-transformer';
-import { IsNotEmpty, IsString, IsTimeZone, Matches } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import {
+  IsArray,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Matches,
+  ValidateNested,
+} from 'class-validator';
+import { CreateDocumentosDto } from './create-documentos.dto';
 
 export class CreateFuncionarioDto {
   @IsString()
@@ -11,8 +19,16 @@ export class CreateFuncionarioDto {
   @IsNotEmpty()
   document: string;
 
+  @IsString()
+  @IsNotEmpty()
   @Matches(/^\d{4}-\d{2}-\d{2}$/, {
     message: 'date must be in YYYY-MM-DD format',
   })
   hiredAt: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateDocumentosDto)
+  documentos?: CreateDocumentosDto[];
 }

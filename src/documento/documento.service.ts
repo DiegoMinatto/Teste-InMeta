@@ -1,49 +1,75 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { CreateDocumentoDto } from './dto/create-documento.dto';
-import { UpdateDocumentoDto } from './dto/update-documento.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { EnviarDocumentoDto } from './dto';
 import { Status } from '@prisma/client';
+import { QueryDocumentoDto } from './dto/query.dto';
 
 @Injectable()
 export class DocumentoService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createDocumentoDto: CreateDocumentoDto) {
-    const employee = await this.prisma.employees.findUnique({
-      where: { id: createDocumentoDto.employeeId },
+  async findAll(queryDocumentoDto: QueryDocumentoDto) {
+    const rowPerPage = queryDocumentoDto.perPage ?? 10;
+
+    var paginate = {};
+
+    if (queryDocumentoDto.page) {
+      paginate = {
+        take: rowPerPage,
+        skip: (queryDocumentoDto.page - 1) * rowPerPage,
+      };
+    }
+
+    var filter = {};
+    if (queryDocumentoDto.documentTypeId)
+      filter = { ...filter, documentTypeId: queryDocumentoDto.documentTypeId };
+
+    if (queryDocumentoDto.employeeId)
+      filter = { ...filter, employeeId: queryDocumentoDto.employeeId };
+
+    if (queryDocumentoDto.status)
+      filter = { ...filter, status: queryDocumentoDto.status };
+
+    const promotionCount = await this.prisma.documents.count();
+
+    const documents = await this.prisma.documents.findMany({
+      ...paginate,
+      include: { employee: true },
+      where: filter,
     });
-    const documentType = await this.prisma.documentTypes.findUnique({
-      where: { id: createDocumentoDto.documentTypeId },
-    });
 
-    if (!employee) throw new BadRequestException(`Funcionário não encontrado!`);
+    return {
+      content: documents,
 
-    if (!documentType)
-      throw new BadRequestException(`Tipo de documento não encontrado!`);
-
-    return this.prisma.documents.create({
-      data: {
-        name: createDocumentoDto.name,
-        employee: { connect: employee },
-        documentType: { connect: documentType },
-        status: Status.PENDING
+      meta: {
+        total: promotionCount,
+        currentPage: queryDocumentoDto.page,
+        perPage: rowPerPage,
       },
+    };
+  }
+
+  async enviar(enviarDocumentoDto: EnviarDocumentoDto) {
+    const employee = await this.prisma.employees.findUnique({
+      where: { id: enviarDocumentoDto.employeeId },
+      include: { Documents: true },
     });
-  }
 
-  findAll() {
-    return `This action returns all documento`;
-  }
+    if (!employee) throw new BadRequestException(`Empregado não encontrado!`);
 
-  findOne(id: number) {
-    return `This action returns a #${id} documento`;
-  }
+    const hasDocument = employee.Documents.filter(
+      (el) => el.documentTypeId === enviarDocumentoDto.documentTypeId,
+    );
 
-  update(id: number, updateDocumentoDto: UpdateDocumentoDto) {
-    return `This action updates a #${id} documento`;
-  }
+    if (hasDocument.length === 0)
+      throw new BadRequestException(`Empregado não possui o documento!`);
 
-  remove(id: number) {
-    return `This action removes a #${id} documento`;
+    if (hasDocument[0].status === Status.E)
+      throw new BadRequestException(`O documento já foi entregue!`);
+
+    return this.prisma.documents.update({
+      where: { id: hasDocument[0].id },
+      data: { name: enviarDocumentoDto.name, status: Status.E },
+    });
   }
 }

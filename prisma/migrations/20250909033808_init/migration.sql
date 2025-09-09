@@ -9,14 +9,14 @@ CREATE TABLE "Employees" (
 -- CreateTable
 CREATE TABLE "DocumentTypes" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "name" TEXT NOT NULL
+    "name" TEXT
 );
 
 -- CreateTable
 CREATE TABLE "Documents" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "name" TEXT NOT NULL,
-    "status" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'P',
     "documentTypeId" INTEGER NOT NULL,
     "employeeId" INTEGER NOT NULL,
     CONSTRAINT "Documents_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "Employees" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -25,3 +25,6 @@ CREATE TABLE "Documents" (
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Employees_document_key" ON "Employees"("document");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Documents_documentTypeId_employeeId_key" ON "Documents"("documentTypeId", "employeeId");
