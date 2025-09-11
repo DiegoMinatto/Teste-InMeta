@@ -31,8 +31,8 @@ model Documents {
   id             Int           @id @default(autoincrement())
   name           String?
   status         Status        @default(P)
-  employee       Employees     @relation(fields: [employeeId], references: [id])
-  documentType   DocumentTypes @relation(fields: [documentTypeId], references: [id])
+  employee       Employees     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  documentType   DocumentTypes @relation(fields: [documentTypeId], references: [id], onDelete: Cascade)
   documentTypeId Int
   employeeId     Int
 
