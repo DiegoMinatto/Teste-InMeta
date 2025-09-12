@@ -1,20 +1,20 @@
 import { CreateFuncionarioDto } from './create-funcionario.dto';
 import { IsArray, IsNumber, IsOptional, ValidateNested } from 'class-validator';
 import { ApiPropertyOptional, PartialType } from '@nestjs/swagger';
-import { UpdateDocumentosDto } from '.';
+import { CreateDocumentosDto } from '.';
 import { Type } from 'class-transformer';
 
 export class UpdateFuncionarioDto extends PartialType(CreateFuncionarioDto) {
   @ApiPropertyOptional({
-    type: [UpdateDocumentosDto],
+    type: [CreateDocumentosDto],
     description: 'Documentos do funcionário',
     nullable: true,
   })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => UpdateDocumentosDto)
-  documentos?: UpdateDocumentosDto[];
+  @Type(() => CreateDocumentosDto)
+  documentos?: CreateDocumentosDto[];
 
   @ApiPropertyOptional({
     type: [Number],

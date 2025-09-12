@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateTipodocumentoDto, UpdateTipodocumentoDto } from './dto';
 import { PaginationDto } from 'src/dto';
@@ -44,14 +44,27 @@ export class TipodocumentoService {
     return this.prisma.documentTypes.findUnique({ where: { id: id } });
   }
 
-  update(id: number, updateTipodocumentoDto: UpdateTipodocumentoDto) {
+  async update(id: number, updateTipodocumentoDto: UpdateTipodocumentoDto) {
+    const documentType = await this.prisma.documentTypes.findUnique({
+      where: { id: id },
+    });
+
+    if (!documentType)
+      throw new BadRequestException(`Tipo de documento não encontrado!`);
+
     return this.prisma.documentTypes.update({
       where: { id: id },
       data: updateTipodocumentoDto,
     });
   }
 
-  remove(id: number) {
+  async remove(id: number) {
+    const documentType = await this.prisma.documentTypes.findUnique({
+      where: { id: id },
+    });
+    if (!documentType)
+      throw new BadRequestException(`Tipo de documento não encontrado!`);
+
     return this.prisma.documentTypes.delete({ where: { id: id } });
   }
 }

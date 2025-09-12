@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { TipodocumentoService } from './tipodocumento.service';
 import {
@@ -60,7 +61,7 @@ export class TipodocumentoController {
   @ApiNotFoundResponse({ type: ErrorResponseDto })
   @ApiInternalServerErrorResponse({ type: ErrorResponseDto })
   @Get(':id')
-  findOne(@Param('id') id: number) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.tipodocumentoService.findOne(+id);
   }
 
@@ -73,7 +74,7 @@ export class TipodocumentoController {
   @ApiInternalServerErrorResponse({ type: ErrorResponseDto })
   @Patch(':id')
   update(
-    @Param('id') id: number,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateTipodocumentoDto: UpdateTipodocumentoDto,
   ) {
     return this.tipodocumentoService.update(+id, updateTipodocumentoDto);
@@ -87,7 +88,7 @@ export class TipodocumentoController {
   @ApiNotFoundResponse({ type: ErrorResponseDto })
   @ApiInternalServerErrorResponse({ type: ErrorResponseDto })
   @Delete(':id')
-  remove(@Param('id') id: number) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.tipodocumentoService.remove(+id);
   }
 }

@@ -13,4 +13,12 @@ export class PrismaService extends PrismaClient {
       },
     });
   }
+
+  limpaDB() {
+    return this.$transaction([
+      this.documents.deleteMany(),
+      this.documentTypes.deleteMany(),
+      this.employees.deleteMany(),
+    ]);
+  }
 }

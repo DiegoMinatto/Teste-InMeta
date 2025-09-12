@@ -1,10 +1,13 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { DateTime } from 'luxon';
 import {
   CreateDocumentosDto,
   CreateFuncionarioDto,
-  UpdateDocumentosDto,
   UpdateFuncionarioDto,
 } from './dto';
 import { PaginationDto } from 'src/dto';
@@ -41,6 +44,34 @@ export class FuncionarioService {
           );
         }
         seen.add(doc.documentTypeId);
+      }
+    }
+
+    if (
+      createFuncionarioDto.documentos &&
+      createFuncionarioDto.documentos.length > 0
+    ) {
+      const documentTypeIds = createFuncionarioDto.documentos.map(
+        (doc) => doc.documentTypeId!,
+      );
+
+      const existingDocumentTypes = await this.prisma.documentTypes.findMany({
+        where: {
+          id: { in: documentTypeIds },
+        },
+        select: { id: true },
+      });
+
+      const existingIds = existingDocumentTypes.map((dt) => dt.id);
+
+      const invalidIds = documentTypeIds.filter(
+        (id) => !existingIds.includes(id),
+      );
+
+      if (invalidIds.length > 0) {
+        throw new BadRequestException(
+          `Os seguintes tipos de documento não existem: ${invalidIds.join(', ')}`,
+        );
       }
     }
 
@@ -108,20 +139,10 @@ export class FuncionarioService {
 
     const employeeDocumentsId = employee.Documents.flatMap((doc) => doc.id);
 
-    var documentsInclude: UpdateDocumentosDto[] = [];
+    var documentsInclude: CreateDocumentosDto[] = [];
 
     if (updateFuncionarioDto.documentos)
-      documentsInclude = updateFuncionarioDto.documentos?.filter(
-        (doc) => !doc.id,
-      );
-
-    const documentsUpdate = updateFuncionarioDto.documentos?.filter(
-      (doc) => !!doc.id,
-    );
-
-    const documentsUpdateWithType = documentsUpdate?.filter(
-      (el) => !!el.documentTypeId,
-    );
+      documentsInclude = updateFuncionarioDto.documentos;
 
     //Documento já existe para outro funcionário ?
     if (updateFuncionarioDto.document) {
@@ -146,39 +167,6 @@ export class FuncionarioService {
         }
 
         seen.add(doc.documentTypeId!);
-      }
-    }
-
-    //Existe algum documento a ser atualizado onde o ID não existe ?
-    if (documentsUpdate && documentsUpdate.length > 0) {
-      const allowedSet = new Set(employeeDocumentsId);
-      for (const doc of documentsUpdate) {
-        if (!allowedSet.has(doc.id!)) {
-          throw new BadRequestException(
-            `Documento com o id ${doc.id} não encontrado!`,
-          );
-        }
-      }
-    }
-
-    //Existe algum documento a ser atualizado onde o tipo já existe em outro ?
-    if (documentsUpdate && documentsUpdate.length > 0) {
-      const notAllowedSet = new Set(employeeDocumentsType);
-
-      for (const doc of documentsUpdate) {
-        if (
-          notAllowedSet.has(doc.documentTypeId!) &&
-          !(
-            doc.id ===
-            employee.Documents.filter(
-              (el) => el.documentTypeId === doc.documentTypeId!,
-            )![0].id
-          )
-        ) {
-          throw new BadRequestException(
-            `Documento com o tipo ${doc.documentTypeId} já vinculado ao funcionário!`,
-          );
-        }
       }
     }
 
@@ -246,43 +234,7 @@ export class FuncionarioService {
       }
     }
 
-    //Os tipos de documento na atualização existem ?
-
-    if (documentsUpdateWithType && documentsUpdateWithType.length > 0) {
-      const documentTypeIds = documentsUpdateWithType.map(
-        (doc) => doc.documentTypeId!,
-      );
-
-      const existingDocumentTypes = await this.prisma.documentTypes.findMany({
-        where: {
-          id: { in: documentTypeIds },
-        },
-        select: { id: true },
-      });
-
-      const existingIds = existingDocumentTypes.map((dt) => dt.id);
-
-      const invalidIds = documentTypeIds.filter(
-        (id) => !existingIds.includes(id),
-      );
-
-      if (invalidIds.length > 0) {
-        throw new BadRequestException(
-          `Os seguintes tipos de documento não existem: ${invalidIds.join(', ')}`,
-        );
-      }
-    }
-
     await this.prisma.$transaction(async (prisma) => {
-      if (documentsUpdate)
-        await documentsUpdate.map(
-          async (update) =>
-            await prisma.documents.update({
-              where: { id: update.id },
-              data: update,
-            }),
-        );
-
       if (
         updateFuncionarioDto.documents_remove &&
         updateFuncionarioDto.documents_remove.length > 0
@@ -320,7 +272,14 @@ export class FuncionarioService {
     });
   }
 
-  remove(id: number) {
+  async remove(id: number) {
+    const documentType = await this.prisma.employees.findUnique({
+      where: { id: id },
+    });
+
+    if (!documentType)
+      throw new BadRequestException(`Empregado não encontrado!`);
+
     return this.prisma.employees.delete({ where: { id: id } });
   }
 }
